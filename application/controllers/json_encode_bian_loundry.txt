@@ -1,0 +1,272 @@
+	function harga()
+	{
+	$idadm				     	    = $this->session->userdata('iduser');	
+	$produk							= $this->input->post('produk');
+	$potongan						= $this->input->post('potongan');	
+	$jumlah							= $this->input->post('jumlah');
+	
+	$exp							= explode('#',$produk);
+	$idproduk						= $exp[0];
+	$produk							= $exp[1];
+	$q_produk						= $this->m_produk->show_detail($idproduk,$idadm);
+	$baris							= $q_produk->row(); 
+		if(isset($idproduk))
+		{
+			if (isset($baris)) //kalo barisnya ada
+			{
+				$harga		= $baris->mstproduk_harga;
+				$lama		= $baris->mstproduk_lama;
+				$tglambil	= date('Y-m-d', strtotime("+". $lama ." days"));
+			}
+			else
+			{
+				$harga		= '0';
+				$lama		= '0';
+				$tglambil	= date('Y-m-d', strtotime("+0 days"));
+			}
+		}
+	$subtotal 	= $harga*$jumlah;
+	$biaya	 	= $subtotal-$potongan;	
+	$hari		= date( "l", strtotime($tglambil));
+	$waktu		= $lama." / ". $tglambil ." / ". nama_hari2($hari);
+	
+	
+	
+	$array = array($harga,$subtotal,$biaya,$waktu);
+	echo json_encode($array);
+	}
+	
+	
+	function subtotal()
+	{
+	$harga				     	    = $this->input->post('harga');	
+	$jumlah							= $this->input->post('jumlah'); 
+	$potongan						= $this->input->post('potongan'); 
+	$subtotal						= $harga * $jumlah; 
+	$biaya							= $subtotal-$potongan;
+	$array = array($subtotal,$biaya);
+	echo json_encode($array);
+	}
+	
+	
+	function biaya()
+	{
+	$harga				     	    = $this->input->post('harga');	
+	$jumlah							= $this->input->post('jumlah'); 
+	$potongan						= $this->input->post('potongan'); 
+	$subtotal						= $harga * $jumlah; 
+	$biaya							= $subtotal-$potongan;
+	$array = array($biaya);
+	echo json_encode($array);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	====front end ============
+	  <link rel="stylesheet" href="<?php echo base_url();?>assets/plugins/daterangepicker/daterangepicker.css"> 
+<script  src="<?php echo base_url();?>assets/plugins/daterangepicker/moment.min.js"></script>
+ <script src="<?php echo base_url();?>assets/plugins/daterangepicker/daterangepicker.js"></script>
+
+<!-- auto cmp -->
+<script language="javascript" type="text/javascript">
+$(document).ready( function() {
+	$("#kategori").change(function(){
+		$.ajax({
+		type: "POST",
+		url: "<?php echo base_url();?>loundry/produk",
+		data:'kategori='+$(this).val(),
+		success: function(data){
+			$("#produk").html(data);
+		}
+		});
+	});
+
+	$("#produk").change(function(){
+		var jumlah = $("#jumlah").val();
+		var harga  = $("#harga").val();
+		var potongan  = $("#potongan").val();
+		var produk	= $(this).val();
+		$.ajax({
+		type: "POST",
+		dataType: 'json',
+		url: "<?php echo base_url();?>loundry/harga",
+		data:'produk='+produk+'&potongan='+potongan+'&jumlah='+jumlah,
+		success: function(data){
+			$("#harga").val(data[0]);
+			$("#subtotal").val(data[1]);
+			$("#biaya").val(data[2]);
+			$("#lama").val(data[3]);
+		}
+		});
+	});
+
+	
+	$("#jumlah").keyup(function(){
+		var jumlah    = $(this).val();
+		var harga     = $("#harga").val();
+		var potongan  = $("#potongan").val();
+		$.ajax({
+		type: "POST",
+		dataType: 'json',//dibalikinnya
+		url: "<?php echo base_url();?>loundry/subtotal",
+		data:'jumlah='+jumlah+'&harga='+harga+'&potongan='+potongan,
+		success: function(data){
+			$("#subtotal").val(data[0]);
+			$("#biaya").val(data[1]);
+		}
+		});
+	});
+	
+	$("#potongan").keyup(function(){
+		var jumlah    = $("#jumlah").val();
+		var harga     = $("#harga").val();
+		var potongan  = $(this).val();
+		$.ajax({
+		type: "POST",
+		dataType: 'json',//dibalikinnya
+		url: "<?php echo base_url();?>loundry/biaya",
+		data:'jumlah='+jumlah+'&harga='+harga+'&potongan='+potongan,
+		success: function(data){
+			$("#biaya").val(data[0]);
+		}
+		});
+	});
+	
+	// $("p").removeAttr("style");
+	
+	//default
+	    $("#namabaru").hide();
+		$("#namabaru").removeAttr("required");
+		$("#nama").show();
+		$("#alamat").attr("readonly","1");
+		$("#telp").attr("readonly","1");
+		$("#status1").attr("checked","1");
+		
+	$("#status1").click(function(){
+		$("#namabaru").hide();
+		$("#namabaru").removeAttr("required");
+		$("#nama").show();
+		$("#alamat").attr("readonly","1");
+		$("#telp").attr("readonly","1");
+	});
+	
+	$("#status0").click(function(){
+		$("#namabaru").show();
+		$("#namabaru").attr("required","1");
+		$("#nama").hide();
+		$("#nama").removeAttr("required");
+		$("#alamat").removeAttr("readonly");
+		$("#telp").removeAttr("readonly");
+	});
+	
+	
+	
+	$("#nama").change(function(){
+		var nama	= $(this).val();
+		$.ajax({
+		type: "POST",
+		dataType: 'json',
+		url: "<?php echo base_url();?>loundry/konsumen",
+		data:'nama='+nama,
+		success: function(data){
+			$("#alamat").val(data[0]);
+			$("#telp").val(data[1]);
+		}
+		});
+	});
+	
+	$("#bayar").keyup(function(){
+		var biaya2    = $("#biaya2").val();
+		var bayar  = $(this).val();	
+		$.ajax({
+		type: "POST",
+		dataType: 'json',//dibalikinnya
+		url: "<?php echo base_url();?>loundry/bayar",
+		data:'biaya='+biaya2+'&bayar='+bayar,
+		success: function(data){
+			$("#sisa").val(data[0]);
+			$("#labelsisa").val(data[0]);
+		}
+		});
+		
+		
+		/*if(bayar>=biaya2)
+		{
+		$("select[name=statusbayar] option[value='2']").prop('selected', true);
+		//$("select[name=statusbayar]").prop('disabled', true);		
+		}
+		
+		else
+		{
+		$("select[name=statusbayar] option[value='1']").prop('selected', true);
+		//$("select[name=statusbayar]").prop('disabled', false);
+		}
+	*/
+		
+	});
+	
+	
+	$("#statusbayar").change(function(){
+		var statusbayar	= $(this).val();
+		var biaya2	    = $("#biaya2").val();
+		var sisa	    = $("#sisa").val();
+		var bayar		= $("#bayar").val();
+			if(statusbayar == '0')
+			{
+				$("#sisa").val(biaya2);
+				$("#bayar").val(0);
+				$("#bayar").prop('disabled', true);
+				
+			}
+			else if(statusbayar == '1')
+			{
+				
+				$("#sisa").val(0);
+				$("#bayar").val(0);	
+				$("#bayar").prop('disabled', false);
+			}
+			else if(statusbayar == '2')
+			{
+				$("#sisa").val(0);
+				$("#bayar").val(biaya2);
+				$("#bayar").prop('disabled', false);	
+			}
+		
+	});
+	
+	
+	$('#dataTables-list').dataTable({
+	ordering: false,
+	processing: true,
+	serverSide: true,
+	bStateSave: true, //menyimpan properti setelah di save
+	ajax: {
+	  url: "<?php echo $jsonLoad; ?>",
+	  type:'POST',
+	}
+    });
+	
+	
+	$('#reservation').daterangepicker({
+	format: 'YYYY/MM/DD'
+	});
+
+	
+	
+});
+
+	
+</script>
+
+
+
