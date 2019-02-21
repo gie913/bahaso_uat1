@@ -615,8 +615,9 @@ class Project extends CI_Controller {
             'cby' => $cby,
             'project1_token' => $project1_token
         );
-
-        if ($this->upload->do_upload('result3_image')) {
+        $upl = move_uploaded_file($_FILES['result3_image']['tmp_name'],"./uploads/".$image_new);
+       // if ($this->upload->do_upload('result3_image')) {
+        if($upl){
             $params['result3_image'] = $image_new;
             $bucket_name = S3_BUCKET;
              $keyname = S3_FOLDER.'/'.$image_new;
