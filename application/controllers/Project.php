@@ -194,10 +194,89 @@ class Project extends CI_Controller {
 	$id				=  $this->session->userdata('userid');
 	$username		=  $this->session->userdata('username');
 	$token_old		=  $this->uri->segment(3);
-	$token_new		=  generateRandomString(15).date('ymd');	
-	$save = $this->db->query("call sp_project_copy('". $token_old ."','". $token_new ."','". $username ."','". $user_id."')");
+	$token_new		=  generateRandomString(15).date('ymd');
+	$copy_project	= $this->m_main->copy_project($token_new,$token_old, $username);
+
+	if($copy_project==true)
+	{
+	$new_project1_id	=	$this->m_main->show_idproject_by_token($token_new);
+
+		//loop for feature
+		$old_features = $this->m_main->manage_feature_by_token($token_old);
+		foreach ($old_features->result_array() as $old_feature)
+		{
+			$old_feature_id	= $old_feature['feature1_id'];
+			$old_feature_name	= $old_feature['feature1_name'];
+			$old_feature_desc	= $old_feature['feature1_desc'];
+			$data_feature = array(
+				'project1_token' 		=> $token_new,
+				'feature1_name'			=> $old_feature_name,
+				'feature1_desc'			=> $old_feature_desc,
+				'project1_id'			=> $new_project1_id,
+				'cby'					=> $username,
+				'activerow'				=> 1,
+				'cdate' 				=> date('Y-m-d H:i:s')
+			);
+			$save_feature = $this->db->insert('feature1', $data_feature);
+			$new_feature1_id = $this->m_main->get_feature_id($token_new,$old_feature_name);
+
+
+			$old_actions = $this->m_main->show_action_by_idfeature($old_feature_id);
+			foreach ($old_actions->result_array() as $old_action)
+			{
+				$old_action_id		= $old_action['action1_id'];
+				$old_action_name	= $old_action['action1_name'];
+				$old_action_type	= $old_action['action1_type'];
+				$old_action_order	= $old_action['action1_order'];
+
+				$data_action = array(
+					'project1_token' 		=> $token_new,
+					'project1_id'			=> $new_project1_id,
+					'feature1_id'			=> $new_feature1_id,
+					'action1_name'			=> $old_action_name,
+					'action1_type'			=> $old_action_type,
+					'action1_order'			=> $old_action_order,
+					'cby'					=> $username,
+					'activerow'				=> 1,
+					'cdate' 				=> date('Y-m-d H:i:s')
+				);
+				$save_action = $this->db->insert('action1', $data_action);
+				$new_action1_id = $this->m_main->get_action_id($token_new,$new_feature1_id,$old_action_name);
+				$old_cases = $this->m_main->show_case_by_idaction($old_action_id);
+				foreach ($old_cases->result_array() as $old_case) {
+					$case1_desc = $old_case['case1_desc'];
+					$case1_expectation = $old_case['case1_expectation'];
+					$case1_important = $old_case['case1_important'];
+					$case1_type = $old_case['case1_type'];
+					$data_action = array(
+						'project1_token' => $token_new,
+						'project1_id' => $new_project1_id,
+						'feature1_id' => $new_feature1_id,
+						'action1_id' => $new_action1_id,
+						'case1_desc' => $case1_desc,
+						'case1_expectation' => $case1_expectation,
+						'case1_important' => $case1_important,
+						'case1_type' => $case1_type,
+						'cby' => $username,
+						'activerow' => 1,
+						'cdate' => date('Y-m-d H:i:s')
+					);
+					$save_case = $this->db->insert('case1', $data_action);
+				}
+			}
+			$save=1;
+		}
+	}
+
+	else
+	{
+		echo "failed";
+		$save=0;
+	}
 	
-	if($save)
+	//$save = $this->db->query("call sp_project_copy('". $token_old ."','". $token_new ."','". $username ."','". $user_id."')");
+	
+	if($save==1)
 	{
 	$alert_status	= 1;	
 	$alert_type		= "alert-success";
@@ -477,6 +556,8 @@ class Project extends CI_Controller {
   <span class='caret'></span></button>
   <ul class='dropdown-menu'>
   <li> <a  href='".base_url() ."feature/manage/".$dt->project1_token."'>Manage</a></li>
+    <li class='divider'></li>
+	  <li> <a  href='".base_url() ."project/copyproject/".$dt->project1_token."'>Copy</a></li>
     <li class='divider'></li>
 <li><a href='#' onclick=\"callModal('". $dt->project1_id ."','". $dt->project1_name  ."','". $dt->project1_version ."','". $dt->project1_platform."')\">Edit</a></li>
  <li><a  onclick=\"return confirm('Are you sure to delete ". $dt->project1_name ."')\" href='". base_url() ."project/delete/".$dt->project1_token." '>Delete</a> </li>

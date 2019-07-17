@@ -192,7 +192,34 @@ class M_main extends CI_Model
 		return $row->project1_status;
 		}
 		
-		
+		function get_project_id($token){
+		$this->db->select('project1_id');
+		$array 		= array('activerow' => 1, 'project1_token' =>$token);
+					  $this->db->where($array);
+					  $this->db->limit(1);
+		$query 		= $this->db->get('project1');
+		$row		= $query->row();	
+		return $row->project1_id;
+		}
+
+	function copy_project($new_token,$old_token, $actor){
+		$query = "insert into project1(project1_token,project1_name,project1_code,project1_platform,project1_version,
+										   project1_desc,activerow,cby,cdate)
+					 select 
+					'". $new_token."', concat(project1_name,' copy'),project1_code,
+						project1_platform,project1_version,project1_desc,activerow,'". $actor."',now() from project1
+						 where project1_token='". $old_token."'";
+		$result = $this->db->query($query);
+		if($result)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 		/*feature */	
 		function manage_feature_by_token($token){
 		$this->db->select('feature1_id,feature1_name,feature1_desc');
@@ -227,6 +254,20 @@ class M_main extends CI_Model
 		$query = $this->db->get('v_list_feature');
 		return $query;
 		}
+		
+		function get_feature_id($project1_token,$feature1_name){
+		$this->db->select('feature1_id');
+		$array 		= array('activerow' => 1, 
+							'project1_token' =>$project1_token,
+							'feature1_name' =>$feature1_name
+							);
+					  $this->db->where($array);
+					  $this->db->limit(1);
+		$query 		= $this->db->get('feature1');
+		$row		= $query->row();	
+		return $row->feature1_id;
+		}
+
 		
 		/*actions */	
 		function show_total_actions($idfeature){
@@ -292,12 +333,26 @@ class M_main extends CI_Model
         }
 
 
+
 		function count_action($idfeature,$idaction){
 		$query = $this->db->query("select count(action1_id) as urutan from action1 where action1_id <=". $idaction ." and feature1_id=". $idfeature ." ORDER BY action1_id asc;");
 		$urutan = $query->row()->urutan;
 		return $urutan;
 		}
 		
+		function get_action_id($project1_token,$feature1_id,$action1_name){
+		$this->db->select('action1_id');
+		$array 		= array('activerow' => 1, 
+							'project1_token' => $project1_token,
+							'feature1_id' => $feature1_id,
+							'action1_name' => $action1_name
+							);
+					  $this->db->where($array);
+					  $this->db->limit(1);
+		$query 		= $this->db->get('action1');
+		$row		= $query->row();	
+		return $row->action1_id;
+		}
 
 		/*case */	
 		function show_case_by_idaction($idaction){
